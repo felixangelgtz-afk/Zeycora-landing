@@ -14,6 +14,7 @@ import {
   ticketKpis,
   warranties,
 } from './data/demoData.js';
+import { buildWhatsappUrl, initAnalytics, trackEvent } from './lib/analytics.js';
 import './styles.css';
 
 const demoRoutes = {
@@ -27,6 +28,18 @@ const demoRoutes = {
 
 const menuItems = ['Dashboard', 'Notificaciones', 'Satisfaccion', 'Tickets', 'Usuarios', 'Garantias', 'Kits', 'Configuracion'];
 
+const solutionTypes = ['Tickets', 'Taller', 'Flotilla', 'Inventario', 'CRM', 'Desarrollo personalizado'];
+
+function normalizeSolutionType(system) {
+  const value = String(system || '').toLowerCase();
+  if (value.includes('taller')) return 'Taller';
+  if (value.includes('flotilla')) return 'Flotilla';
+  if (value.includes('inventario')) return 'Inventario';
+  if (value.includes('crm')) return 'CRM';
+  if (value.includes('ticket') || value.includes('servicio')) return 'Tickets';
+  return 'Desarrollo personalizado';
+}
+
 function navigateTo(path) {
   window.history.pushState({}, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
@@ -37,9 +50,16 @@ function App() {
   const [modalSystem, setModalSystem] = useState('');
 
   React.useEffect(() => {
+    initAnalytics();
+    trackEvent('visita_landing', { page_path: window.location.pathname });
     const onPopState = () => setPath(window.location.pathname);
+    const onOpenContact = (event) => setModalSystem(event.detail || 'Desarrollo personalizado');
     window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    window.addEventListener('open-zeycora-contact', onOpenContact);
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      window.removeEventListener('open-zeycora-contact', onOpenContact);
+    };
   }, []);
 
   const page = useMemo(() => {
@@ -56,6 +76,7 @@ function App() {
     <>
       {!isDemoPath && <Header />}
       <main>{page}</main>
+      <WhatsappButton />
       {isDemoPath && <FloatingContact onContact={() => setModalSystem('Demostracion personalizada')} />}
       {!isDemoPath && <Footer />}
       {modalSystem && <ContactModal system={modalSystem} onClose={() => setModalSystem('')} />}
@@ -76,6 +97,9 @@ function LinkButton({ href, children, className = '', disabled = false }) {
         }
         if (href?.startsWith('/')) {
           event.preventDefault();
+          if (href.startsWith('/demos')) {
+            trackEvent('click_probar_demo', { destination: href });
+          }
           navigateTo(href);
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -102,6 +126,7 @@ function Header() {
           <a href="/#solutions">Soluciones</a>
           <a href="/demos" onClick={(event) => {
             event.preventDefault();
+            trackEvent('click_probar_demo', { destination: '/demos' });
             navigateTo('/demos');
           }}>
             Probar un sistema
@@ -130,12 +155,99 @@ function LandingPage() {
               procesos, optimizar operaciones y modernizar su flujo de trabajo.
             </p>
             <div className="actions">
-              <a href="mailto:contacto@zeycora.com" className="btn btn-primary">Contactar</a>
+              <a
+                href="mailto:contacto@zeycora.com"
+                className="btn btn-primary"
+                onClick={() => trackEvent('click_solicitar_cotizacion', { source: 'hero_contactar' })}
+              >
+                Contactar
+              </a>
               <LinkButton href="/demos" className="btn-secondary">Probar un sistema</LinkButton>
             </div>
           </div>
           <div className="hero-image">
             <img src={logoPrincipal} alt="ZEYCORA Specialized Software" />
+          </div>
+        </div>
+      </section>
+
+      <section className="ready-solutions" id="demos-home">
+        <div className="container">
+          <SectionIntro
+            title="Soluciones listas para implementar"
+            subtitle="Demos visuales para evaluar rapidamente como Zeycora puede controlar procesos operativos, servicios, inventarios y relaciones comerciales."
+          />
+          <div className="solution-grid">
+            {demoSystems.map((system) => (
+              <article className="solution-card" key={system.slug}>
+                <span className="system-icon">{system.icon}</span>
+                <h3>{system.name}</h3>
+                <ul className="benefit-list">
+                  {system.benefits.map((benefit) => (
+                    <li key={benefit}>{benefit}</li>
+                  ))}
+                </ul>
+                <LinkButton href={`/demos/${system.slug}`} className="btn-secondary">Ver Demo</LinkButton>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="custom-development-section">
+        <div className="container custom-development-grid">
+          <div>
+            <p className="eyebrow">Desarrollo a medida</p>
+            <h2>Necesitas algo diferente?</h2>
+            <p>
+              Desarrollamos soluciones personalizadas adaptadas a los procesos especificos de tu empresa.
+            </p>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => {
+                trackEvent('click_solicitar_cotizacion', { source: 'desarrollo_a_medida' });
+                window.dispatchEvent(new CustomEvent('open-zeycora-contact', { detail: 'Desarrollo personalizado' }));
+              }}
+            >
+              Solicitar cotizacion
+            </button>
+          </div>
+          <div className="custom-example-grid">
+            {[
+              'Aplicaciones moviles',
+              'Sistemas web',
+              'Automatizacion de procesos',
+              'Dashboards ejecutivos',
+              'Integraciones empresariales',
+              'Portales de clientes',
+            ].map((example) => (
+              <article className="example-card" key={example}>{example}</article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="trust-section">
+        <div className="container">
+          <SectionIntro
+            title="Por que Zeycora?"
+            subtitle="Construimos plataformas empresariales con enfoque comercial, operativo y tecnico para empresas que necesitan control real."
+          />
+          <div className="trust-grid">
+            {[
+              'Soluciones personalizadas',
+              'Implementacion rapida',
+              'Escalable',
+              'Acceso desde cualquier lugar',
+              'Soporte especializado',
+              'Tecnologia moderna',
+            ].map((item) => (
+              <article className="trust-card" key={item}>
+                <span />
+                <strong>{item}</strong>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -185,7 +297,16 @@ function LandingPage() {
             <h2>Transformamos procesos manuales en soluciones digitales.</h2>
             <p>ZEYCORA desarrolla tecnologia enfocada en resultados reales para empresas modernas.</p>
             <div className="actions centered">
-              <a href="mailto:contacto@zeycora.com" className="btn btn-primary">contacto@zeycora.com</a>
+              <button
+                className="btn btn-primary"
+                type="button"
+                onClick={() => {
+                  trackEvent('click_solicitar_cotizacion', { source: 'landing_cta' });
+                  window.dispatchEvent(new CustomEvent('open-zeycora-contact', { detail: 'Desarrollo personalizado' }));
+                }}
+              >
+                Solicitar cotizacion
+              </button>
               <LinkButton href="/demos" className="btn-secondary">Ver demos</LinkButton>
             </div>
           </div>
@@ -208,6 +329,7 @@ function DemosPage({ onContact }) {
   return (
     <section className="page-shell demos-page">
       <div className="container">
+        <DemoNotice />
         <div className="page-heading">
           <p className="eyebrow">Catalogo de soluciones</p>
           <h1>Prueba un sistema Zeycora</h1>
@@ -216,7 +338,14 @@ function DemosPage({ onContact }) {
             servicios tecnicos, talleres, flotillas e inventarios.
           </p>
           <div className="actions centered">
-            <button className="btn btn-secondary" type="button" onClick={() => onContact('Catalogo de demos')}>
+            <button
+              className="btn btn-secondary"
+              type="button"
+              onClick={() => {
+                trackEvent('click_solicitar_cotizacion', { source: 'catalogo_demos' });
+                onContact('Catalogo de demos');
+              }}
+            >
               Solicitar demo personalizada
             </button>
           </div>
@@ -254,24 +383,32 @@ function TicketDemo({ onContact }) {
   const selectedTicket = demoTickets.find((ticket) => ticket.folio === selectedId) ?? demoTickets[0];
 
   if (!entered) {
-    return <TicketEntry onEnter={() => setEntered(true)} onContact={onContact} />;
+    return (
+      <>
+        <DemoNotice />
+        <TicketEntry onEnter={() => setEntered(true)} onContact={onContact} />
+      </>
+    );
   }
 
   return (
-    <SaasShell
-      systemName="Gestion de Servicios Tecnicos"
-      activeModule={activeModule}
-      onModule={setActiveModule}
-      onContact={onContact}
-    >
-      <DashboardModule
+    <>
+      <DemoNotice />
+      <SaasShell
+        systemName="Gestion de Servicios Tecnicos"
         activeModule={activeModule}
-        selectedTicket={selectedTicket}
-        selectedId={selectedId}
-        onSelectTicket={setSelectedId}
+        onModule={setActiveModule}
         onContact={onContact}
-      />
-    </SaasShell>
+      >
+        <DashboardModule
+          activeModule={activeModule}
+          selectedTicket={selectedTicket}
+          selectedId={selectedId}
+          onSelectTicket={setSelectedId}
+          onContact={onContact}
+        />
+      </SaasShell>
+    </>
   );
 }
 
@@ -307,7 +444,14 @@ function TicketEntry({ onEnter, onContact }) {
         </div>
         <div className="actions">
           <button className="btn btn-primary" type="button" onClick={onEnter}>Entrar a la Demo</button>
-          <button className="btn btn-secondary" type="button" onClick={() => onContact('Gestion de Servicios Tecnicos')}>
+          <button
+            className="btn btn-secondary"
+            type="button"
+            onClick={() => {
+              trackEvent('click_solicitar_cotizacion', { source: 'ticket_entry' });
+              onContact('Gestion de Servicios Tecnicos');
+            }}
+          >
             Solicitar cotizacion
           </button>
         </div>
@@ -401,7 +545,16 @@ function DemoPageHeader({ eyebrow, title, description, onContact }) {
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
-      <button className="btn btn-primary" type="button" onClick={onContact}>Solicitar cotizacion</button>
+      <button
+        className="btn btn-primary"
+        type="button"
+        onClick={() => {
+          trackEvent('click_solicitar_cotizacion', { source: title });
+          onContact();
+        }}
+      >
+        Solicitar cotizacion
+      </button>
     </div>
   );
 }
@@ -703,91 +856,152 @@ function InfoLine({ label, value }) {
 function BusinessDashboard({ type, onContact }) {
   const content = dashboards[type];
   return (
-    <section className="business-demo">
-      <div className="business-shell">
-        <DemoPageHeader
-          eyebrow="Demo visual"
-          title={content.title}
-          description={content.subtitle}
-          onContact={() => onContact(content.ctaSystem)}
-        />
-        <KpiGrid kpis={content.kpis} />
-        <section className="business-grid">
-          <article className="data-card">
-            <div className="panel-title">
-              <h2>Modulos</h2>
-              <span>Dashboard completo</span>
-            </div>
-            <div className="module-chips">
-              {content.modules.map((module) => (
-                <span key={module}>{module}</span>
-              ))}
-            </div>
-          </article>
-          <article className="data-card">
-            <div className="panel-title">
-              <h2>Operacion simulada</h2>
-              <span>Datos locales</span>
-            </div>
-            <div className="simple-table">
-              {content.rows.map((row) => (
-                <div className="simple-row" key={row.join('-')}>
-                  <strong>{row[0]}</strong>
-                  <span>{row[2]}</span>
-                  <small>{row[1]} - {row[3]}</small>
-                </div>
-              ))}
-            </div>
-          </article>
-          <BarChart title="Actividad mensual" data={[
-            { label: 'Ene', value: 28 },
-            { label: 'Feb', value: 34 },
-            { label: 'Mar', value: 31 },
-            { label: 'Abr', value: 46 },
-            { label: 'May', value: 58 },
-          ]} />
-        </section>
-        <button className="btn btn-primary" type="button" onClick={() => onContact(content.ctaSystem)}>
-          Solicitar cotizacion
-        </button>
-      </div>
-    </section>
+    <>
+      <DemoNotice />
+      <section className="business-demo">
+        <div className="business-shell">
+          <DemoPageHeader
+            eyebrow="Demo visual"
+            title={content.title}
+            description={content.subtitle}
+            onContact={() => onContact(content.ctaSystem)}
+          />
+          <KpiGrid kpis={content.kpis} />
+          <section className="business-grid">
+            <article className="data-card">
+              <div className="panel-title">
+                <h2>Modulos</h2>
+                <span>Dashboard completo</span>
+              </div>
+              <div className="module-chips">
+                {content.modules.map((module) => (
+                  <span key={module}>{module}</span>
+                ))}
+              </div>
+            </article>
+            <article className="data-card">
+              <div className="panel-title">
+                <h2>Operacion simulada</h2>
+                <span>Datos locales</span>
+              </div>
+              <div className="simple-table">
+                {content.rows.map((row) => (
+                  <div className="simple-row" key={row.join('-')}>
+                    <strong>{row[0]}</strong>
+                    <span>{row[2]}</span>
+                    <small>{row[1]} - {row[3]}</small>
+                  </div>
+                ))}
+              </div>
+            </article>
+            <BarChart title="Actividad mensual" data={[
+              { label: 'Ene', value: 28 },
+              { label: 'Feb', value: 34 },
+              { label: 'Mar', value: 31 },
+              { label: 'Abr', value: 46 },
+              { label: 'May', value: 58 },
+            ]} />
+          </section>
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={() => {
+              trackEvent('click_solicitar_cotizacion', { source: content.ctaSystem });
+              onContact(content.ctaSystem);
+            }}
+          >
+            Solicitar cotizacion
+          </button>
+        </div>
+      </section>
+    </>
   );
 }
 
 function CustomDevelopmentDemo({ onContact }) {
   const examples = ['Apps moviles', 'Sistemas web', 'Dashboards', 'Automatizaciones', 'Integraciones', 'Portales de clientes'];
   return (
-    <section className="business-demo custom-demo">
-      <div className="business-shell">
-        <DemoPageHeader
-          eyebrow="Desarrollo a medida"
-          title="No encuentras exactamente lo que necesitas?"
-          description="Desarrollamos soluciones personalizadas para empresas que requieren flujos, roles, reportes e integraciones especificas."
-          onContact={() => onContact('Desarrollo a Medida')}
-        />
-        <div className="custom-grid">
-          {examples.map((example) => (
-            <article className="data-card role-card" key={example}>
-              <span>Solucion</span>
-              <strong>{example}</strong>
-              <p>Diseno funcional, interfaz profesional y arquitectura alineada a la operacion.</p>
-            </article>
-          ))}
+    <>
+      <DemoNotice />
+      <section className="business-demo custom-demo">
+        <div className="business-shell">
+          <DemoPageHeader
+            eyebrow="Desarrollo a medida"
+            title="No encuentras exactamente lo que necesitas?"
+            description="Desarrollamos soluciones personalizadas para empresas que requieren flujos, roles, reportes e integraciones especificas."
+            onContact={() => onContact('Desarrollo a Medida')}
+          />
+          <div className="custom-grid">
+            {examples.map((example) => (
+              <article className="data-card role-card" key={example}>
+                <span>Solucion</span>
+                <strong>{example}</strong>
+                <p>Diseno funcional, interfaz profesional y arquitectura alineada a la operacion.</p>
+              </article>
+            ))}
+          </div>
+          <button
+            className="btn btn-primary"
+            type="button"
+            onClick={() => {
+              trackEvent('click_solicitar_cotizacion', { source: 'desarrollo_demo' });
+              onContact('Desarrollo a Medida');
+            }}
+          >
+            Solicitar cotizacion
+          </button>
         </div>
-        <button className="btn btn-primary" type="button" onClick={() => onContact('Desarrollo a Medida')}>
-          Solicitar cotizacion
-        </button>
-      </div>
-    </section>
+      </section>
+    </>
+  );
+}
+
+function DemoNotice() {
+  return (
+    <div className="demo-notice">
+      <span>Esta es una demostracion visual de referencia.</span>
+      <button
+        type="button"
+        onClick={() => {
+          trackEvent('click_solicitar_cotizacion', { source: 'demo_notice' });
+          window.dispatchEvent(new CustomEvent('open-zeycora-contact', { detail: 'Demostracion personalizada' }));
+        }}
+      >
+        Solicitar cotizacion
+      </button>
+    </div>
   );
 }
 
 function FloatingContact({ onContact }) {
   return (
-    <button className="floating-contact" type="button" onClick={onContact}>
+    <button
+      className="floating-contact"
+      type="button"
+      onClick={() => {
+        trackEvent('click_solicitar_cotizacion', { source: 'floating_demo' });
+        onContact();
+      }}
+    >
       Solicitar demostracion personalizada
     </button>
+  );
+}
+
+function WhatsappButton() {
+  const url = buildWhatsappUrl();
+  if (!url) return null;
+
+  return (
+    <a
+      className="whatsapp-button"
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      onClick={() => trackEvent('click_whatsapp', { source: window.location.pathname })}
+    >
+      Hablar con un asesor
+    </a>
   );
 }
 
@@ -797,7 +1011,7 @@ function ContactModal({ system, onClose }) {
     empresa: '',
     correo: '',
     telefono: '',
-    sistema: system,
+    sistema: normalizeSolutionType(system),
     mensaje: '',
   });
   const [status, setStatus] = useState({ type: '', message: '' });
@@ -834,12 +1048,13 @@ function ContactModal({ system, onClose }) {
       }
 
       setStatus({ type: 'success', message: 'Solicitud enviada correctamente. Te contactaremos pronto.' });
+      trackEvent('envio_formulario', { sistema: formData.sistema });
       setFormData({
         nombre: '',
         empresa: '',
         correo: '',
         telefono: '',
-        sistema: system,
+        sistema: normalizeSolutionType(system),
         mensaje: '',
       });
     } catch (error) {
@@ -904,13 +1119,17 @@ function ContactModal({ system, onClose }) {
             />
           </label>
           <label>
-            <span>Sistema de interes</span>
-            <input
-              type="text"
+            <span>Tipo de solucion</span>
+            <select
               value={formData.sistema}
               onChange={(event) => updateField('sistema', event.target.value)}
               required
-            />
+            >
+              <option value="">Seleccionar solucion</option>
+              {solutionTypes.map((type) => (
+                <option key={type}>{type}</option>
+              ))}
+            </select>
           </label>
           <label className="wide">
             <span>Mensaje</span>

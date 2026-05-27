@@ -248,7 +248,8 @@ section {
 }
 
 .services-grid,
-.demo-grid {
+.demo-grid,
+.solution-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 18px;
@@ -256,7 +257,10 @@ section {
 
 .info-card,
 .demo-card,
-.cta-panel {
+.cta-panel,
+.solution-card,
+.trust-card,
+.example-card {
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018));
@@ -267,7 +271,8 @@ section {
 }
 
 .info-card h3,
-.demo-card h2 {
+.demo-card h2,
+.solution-card h3 {
   margin: 0 0 12px;
 }
 
@@ -295,10 +300,122 @@ section {
   max-width: 650px;
 }
 
+.ready-solutions {
+  background: #101010;
+}
+
+.solution-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.solution-card {
+  display: grid;
+  gap: 18px;
+  padding: 26px;
+}
+
+.solution-card .btn {
+  width: max-content;
+}
+
+.custom-development-section {
+  background: #ffffff;
+  color: var(--text);
+}
+
+.custom-development-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 44px;
+  align-items: center;
+}
+
+.custom-development-grid h2 {
+  margin: 0;
+  font-size: clamp(34px, 5vw, 56px);
+  line-height: 1.05;
+}
+
+.custom-development-grid p {
+  color: #4b5563;
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+.custom-example-grid,
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.example-card {
+  min-height: 86px;
+  display: flex;
+  align-items: center;
+  padding: 22px;
+  color: var(--text);
+  background: #f8fafc;
+  border-color: var(--line);
+  font-weight: 900;
+}
+
+.trust-section {
+  background: #0d0d0d;
+}
+
+.trust-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.trust-card {
+  min-height: 118px;
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+}
+
+.trust-card span {
+  width: 34px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--brand-red);
+}
+
+.trust-card strong {
+  font-size: 18px;
+}
+
 .page-shell {
   min-height: calc(100vh - 152px);
   position: relative;
   padding-top: 82px;
+}
+
+.demo-notice {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 18px;
+  color: #ffffff;
+  background: #111111;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-weight: 800;
+}
+
+.demo-notice button {
+  min-height: 32px;
+  border-radius: 999px;
+  padding: 0 14px;
+  color: #ffffff;
+  background: var(--brand-red);
+  cursor: pointer;
+  font-weight: 900;
 }
 
 .page-heading {
@@ -733,6 +850,7 @@ section {
 .field input,
 .field select,
 .contact-form input,
+.contact-form select,
 .contact-form textarea {
   width: 100%;
   min-height: 48px;
@@ -1202,6 +1320,23 @@ section {
   cursor: pointer;
 }
 
+.whatsapp-button {
+  position: fixed;
+  right: 22px;
+  bottom: 84px;
+  z-index: 30;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 18px;
+  color: #ffffff;
+  background: #128c7e;
+  box-shadow: 0 18px 40px rgba(18, 140, 126, 0.24);
+  font-weight: 900;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1297,7 +1432,9 @@ section {
 
 @media (max-width: 1180px) {
   .ops-kpi-grid,
-  .services-grid {
+  .services-grid,
+  .solution-grid,
+  .trust-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1312,6 +1449,10 @@ section {
 
   .filter-panel {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .custom-development-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1375,6 +1516,9 @@ section {
   .hero-grid,
   .services-grid,
   .demo-grid,
+  .solution-grid,
+  .custom-example-grid,
+  .trust-grid,
   .ops-kpi-grid,
   .filter-panel,
   .detail-grid,
@@ -1417,5 +1561,17 @@ section {
     left: 14px;
     right: 14px;
     bottom: 14px;
+  }
+
+  .whatsapp-button {
+    left: 14px;
+    right: 14px;
+    bottom: 72px;
+  }
+
+  .demo-notice {
+    align-items: stretch;
+    flex-direction: column;
+    text-align: center;
   }
 }
