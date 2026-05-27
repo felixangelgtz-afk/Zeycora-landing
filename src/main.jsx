@@ -26,6 +26,14 @@ const demoRoutes = {
   '/demos/desarrollo': 'desarrollo',
 };
 
+const demoVisitEvents = {
+  '/demos/tickets': { event: 'visita_demo_tickets', solution_type: 'Tickets' },
+  '/demos/flotilla': { event: 'visita_demo_flotilla', solution_type: 'Flotilla' },
+  '/demos/taller': { event: 'visita_demo_taller', solution_type: 'Taller' },
+  '/demos/inventario': { event: 'visita_demo_inventario', solution_type: 'Inventario' },
+  '/demos/crm': { event: 'visita_demo_crm', solution_type: 'CRM' },
+};
+
 const menuItems = ['Dashboard', 'Notificaciones', 'Satisfaccion', 'Tickets', 'Usuarios', 'Garantias', 'Kits', 'Configuracion'];
 
 const solutionTypes = ['Tickets', 'Taller', 'Flotilla', 'Inventario', 'CRM', 'Desarrollo personalizado'];
@@ -51,16 +59,36 @@ function App() {
 
   React.useEffect(() => {
     initAnalytics();
-    trackEvent('visita_landing', { page_path: window.location.pathname });
     const onPopState = () => setPath(window.location.pathname);
     const onOpenContact = (event) => setModalSystem(event.detail || 'Desarrollo personalizado');
+    const thirtySecondTimer = window.setTimeout(() => {
+      trackEvent('tiempo_mayor_30_segundos');
+    }, 30000);
+    const sixtySecondTimer = window.setTimeout(() => {
+      trackEvent('tiempo_mayor_60_segundos');
+    }, 60000);
+
     window.addEventListener('popstate', onPopState);
     window.addEventListener('open-zeycora-contact', onOpenContact);
     return () => {
+      window.clearTimeout(thirtySecondTimer);
+      window.clearTimeout(sixtySecondTimer);
       window.removeEventListener('popstate', onPopState);
       window.removeEventListener('open-zeycora-contact', onOpenContact);
     };
   }, []);
+
+  React.useEffect(() => {
+    if (path === '/') {
+      trackEvent('visita_landing', { solution_type: 'Landing' });
+      return;
+    }
+
+    const demoVisit = demoVisitEvents[path];
+    if (demoVisit) {
+      trackEvent(demoVisit.event, { solution_type: demoVisit.solution_type });
+    }
+  }, [path]);
 
   const page = useMemo(() => {
     if (path === '/demos') return <DemosPage onContact={setModalSystem} />;
